@@ -1,19 +1,33 @@
-# Go binaries
-mock-api/mock-api
-lambda-authorizer/bootstrap
-lambda-authorizer/function.zip
-benchmark/benchmark
-
-# Benchmark output files
-output/
-
-# Go workspace sum (auto-generated, not committed)
-go.work.sum
-
-# Maven build output
+HELP.md
 target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# IDE
-.idea/
-.vscode/
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
 *.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
