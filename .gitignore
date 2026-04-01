@@ -1,0 +1,16 @@
+# Go binaries
+mock-api/mock-api
+lambda-authorizer/bootstrap
+lambda-authorizer/function.zip
+benchmark/benchmark
+
+# Go workspace sum (auto-generated, not committed)
+go.work.sum
+
+# Maven build output
+target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
