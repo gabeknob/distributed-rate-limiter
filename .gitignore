@@ -10,6 +10,9 @@ go.work.sum
 # Maven build output
 target/
 
+# Rate limiter Spring Boot service (local reference only, not part of this repo)
+rate-limiter/
+
 # IDE
 .idea/
 .vscode/
