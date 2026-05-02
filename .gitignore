@@ -4,6 +4,9 @@ lambda-authorizer/bootstrap
 lambda-authorizer/function.zip
 benchmark/benchmark
 
+# Benchmark output files
+output/
+
 # Go workspace sum (auto-generated, not committed)
 go.work.sum
 
