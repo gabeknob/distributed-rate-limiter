@@ -21,7 +21,11 @@ func main() {
 
 	defaultProps := &awscdk.StackProps{Env: env}
 
-	stack.NewNetworkStack(app, "NetworkStack", defaultProps)
+	network := stack.NewNetworkStack(app, "NetworkStack", defaultProps)
+	stack.NewDataStack(app, "DataStack", &stack.DataStackProps{
+		StackProps: *defaultProps,
+		Vpc:        network.Vpc,
+	})
 
 	app.Synth(nil)
 }
