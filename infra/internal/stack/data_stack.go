@@ -14,7 +14,7 @@ type DataStackProps struct {
 }
 
 type DataStack struct {
-	Stack awscdk.Stack
+	Stack               awscdk.Stack
 	RedisEndpointAdress *string
 	RedisEndpointPort   *string
 	RedisSecurityGroup  awsec2.ISecurityGroup
@@ -33,18 +33,26 @@ func NewDataStack(scope constructs.Construct, id string, props *DataStackProps) 
 		subnetIds = append(subnetIds, subnetId)
 	}
 
-	subnetGroup := awselasticache.NewCfnSubnetGroup(stack, jsii.String("Redis-Subnet-Group"), &awselasticache.CfnSubnetGroupProps{
-		Description: jsii.String("Subnets privadas para cluster Redis/Valkey"),
-		SubnetIds: 	 &subnetIds,
-	})
+	subnetGroup := awselasticache.NewCfnSubnetGroup(
+		stack,
+		jsii.String("Redis-Subnet-Group"),
+		&awselasticache.CfnSubnetGroupProps{
+			Description: jsii.String("Subnets privadas para cluster Redis/Valkey"),
+			SubnetIds:   &subnetIds,
+		},
+	)
 
-	cache := awselasticache.NewCfnCacheCluster(stack, jsii.String("Redis-Cache"), &awselasticache.CfnCacheClusterProps{
-		Engine: 			  jsii.String("valkey"),
-		CacheNodeType: 		  jsii.String("cache.t3.micro"),
-		NumCacheNodes:   	  jsii.Number(1),
-		CacheSubnetGroupName: subnetGroup.Ref(),
-		VpcSecurityGroupIds:  &[]*string{redisSG.SecurityGroupId()},
-	})
+	cache := awselasticache.NewCfnCacheCluster(
+		stack,
+		jsii.String("Redis-Cache"),
+		&awselasticache.CfnCacheClusterProps{
+			Engine:               jsii.String("valkey"),
+			CacheNodeType:        jsii.String("cache.t3.micro"),
+			NumCacheNodes:        jsii.Number(1),
+			CacheSubnetGroupName: subnetGroup.Ref(),
+			VpcSecurityGroupIds:  &[]*string{redisSG.SecurityGroupId()},
+		},
+	)
 
 	return &DataStack{
 		Stack:               stack,

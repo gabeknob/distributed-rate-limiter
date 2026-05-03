@@ -22,9 +22,17 @@ func main() {
 	defaultProps := &awscdk.StackProps{Env: env}
 
 	network := stack.NewNetworkStack(app, "NetworkStack", defaultProps)
-	stack.NewDataStack(app, "DataStack", &stack.DataStackProps{
+	data := stack.NewDataStack(app, "DataStack", &stack.DataStackProps{
 		StackProps: *defaultProps,
 		Vpc:        network.Vpc,
+	})
+	stack.NewRateLimiterStack(app, "RateLimiterStack", &stack.RateLimiterStackProps{
+		StackProps: *defaultProps,
+		Vpc:        &network.Vpc,
+
+		RedisHost:          data.RedisEndpointAdress,
+		RedisPort:          data.RedisEndpointPort,
+		RedisSecurityGroup: data.RedisSecurityGroup,
 	})
 
 	app.Synth(nil)
