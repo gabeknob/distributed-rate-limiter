@@ -30,9 +30,18 @@ func main() {
 		StackProps: *defaultProps,
 		Vpc:        &network.Vpc,
 
-		RedisHost:          data.RedisEndpointAdress,
-		RedisPort:          data.RedisEndpointPort,
 		RedisSecurityGroup: data.RedisSecurityGroup,
+
+		RateLimiterContainerEnv: &stack.RateLimiterContainerEnv{
+			RedisHost:              data.RedisEndpointAddress,
+			RedisPort:              data.RedisEndpointPort,
+			LimiterCapacity:        jsii.String("10"),
+			LimiterRefillRate:      jsii.String("1"),
+			IpWhitelist:            jsii.String(""),
+			ExposedEndpoints:       jsii.String("health,metrics"),
+			RateLimiterAlgorithm:   jsii.String("TOKEN_BUCKET"),
+			SecurityApiKeysEnabled: jsii.String("false"),
+		},
 	})
 
 	app.Synth(nil)

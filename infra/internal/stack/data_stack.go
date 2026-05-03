@@ -14,10 +14,10 @@ type DataStackProps struct {
 }
 
 type DataStack struct {
-	Stack               awscdk.Stack
-	RedisEndpointAdress *string
-	RedisEndpointPort   *string
-	RedisSecurityGroup  awsec2.ISecurityGroup
+	Stack                awscdk.Stack
+	RedisEndpointAddress *string
+	RedisEndpointPort    *string
+	RedisSecurityGroup   awsec2.ISecurityGroup
 }
 
 func NewDataStack(scope constructs.Construct, id string, props *DataStackProps) *DataStack {
@@ -55,9 +55,9 @@ func NewDataStack(scope constructs.Construct, id string, props *DataStackProps) 
 	)
 
 	return &DataStack{
-		Stack:               stack,
-		RedisEndpointAdress: cache.AttrRedisEndpointAddress(),
-		RedisEndpointPort:   cache.AttrRedisEndpointPort(),
-		RedisSecurityGroup:  redisSG,
+		Stack:                stack,
+		RedisEndpointAddress: cache.AttrRedisEndpointAddress(),
+		RedisEndpointPort:    cache.AttrRedisEndpointPort(),
+		RedisSecurityGroup:   redisSG,
 	}
 }

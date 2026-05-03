@@ -10,12 +10,22 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
+type RateLimiterContainerEnv struct {
+	RedisHost              *string
+	RedisPort              *string
+	LimiterCapacity        *string
+	LimiterRefillRate      *string
+	IpWhitelist            *string
+	ExposedEndpoints       *string
+	RateLimiterAlgorithm   *string
+	SecurityApiKeysEnabled *string
+}
+
 type RateLimiterStackProps struct {
 	awscdk.StackProps
-	Vpc *awsec2.IVpc
+	*RateLimiterContainerEnv
 
-	RedisHost          *string
-	RedisPort          *string
+	Vpc                *awsec2.IVpc
 	RedisSecurityGroup awsec2.ISecurityGroup
 }
 
@@ -105,6 +115,17 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 		},
 	)
 
+	rateLimiterContainerEnv := map[string]*string{
+		"SPRING_DATA_REDIS_HOST":                    props.RedisHost,
+		"SPRING_DATA_REDIS_PORT":                    props.RedisPort,
+		"MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE": props.ExposedEndpoints,
+		"RATELIMITER_ALGORITHM":                     props.RateLimiterAlgorithm,
+		"RATELIMITER_CAPACITY":                      props.LimiterCapacity,
+		"RATELIMITER_REFILLRATE":                    props.LimiterRefillRate,
+		"RATELIMITER_SECURITY_API_KEYS_ENABLED":     props.SecurityApiKeysEnabled,
+		"RATELIMITER_SECURITY_IP_WHITELIST":         props.IpWhitelist,
+	}
+
 	rateLimiterContainer := rateLimitTask.AddContainer(
 		jsii.String("Rate-Limiter-Container"),
 		&awsecs.ContainerDefinitionOptions{
@@ -112,10 +133,7 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 			Logging: awsecs.LogDrivers_AwsLogs(&awsecs.AwsLogDriverProps{
 				StreamPrefix: jsii.String("rate-limiter"),
 			}),
-			Environment: &map[string]*string{
-				"REDIS_HOST": props.RedisHost,
-				"REDIS_PORT": props.RedisPort,
-			},
+			Environment: &rateLimiterContainerEnv,
 		},
 	)
 
@@ -169,7 +187,7 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 				SubnetType: awsec2.SubnetType_PRIVATE_WITH_EGRESS,
 			},
 			Environment: &map[string]*string{
-				"LIMITER_URL": jsii.String("http://rate-limiter.local:8080"),
+				"RATE_LIMITER_URL": jsii.String("http://rate-limiter.local:8080"),
 			},
 		},
 	)
