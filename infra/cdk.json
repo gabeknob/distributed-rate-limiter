@@ -1,5 +1,5 @@
 {
-  "app": "./deploy",
+  "app": "go build -o infra cmd/infra/main.go && ./infra",
   "watch": {
     "include": ["**"],
     "exclude": ["README.md", "cdk*.json", "go.mod", "go.sum", "**/*test.go"]
