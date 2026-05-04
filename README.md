@@ -10,21 +10,26 @@ The system utilizes a multi-layer approach to ensure low latency and high availa
 
 Requests are intercepted at the API Gateway level by a Lambda Authorizer, which communicates with the Rate Limiter service via a Private VPC Link. This ensures that all traffic remains within the internal AWS network. The architecture follows a fail-open strategy: if the rate limiter service is unreachable, the authorizer defaults to allowing the request to prioritize availability.
 
-## Implementation
-
 The underlying service provides several algorithms to control traffic flow, including Fixed Window and Leaky Bucket implementations. For this specific deployment, the **Token Bucket** algorithm was selected to allow for controlled bursts of traffic while maintaining a strict long-term average rate.
 
 The Rate Limiter service is built with Spring Boot and integrates with a Valkey based ElastiCache cluster to store token states. This allows multiple ECS tasks to share the same quota information, providing a consistent rate limit across the entire cluster.
 
-## Project Structure
+## Implementation
 
-The repository is organized to separate infrastructure definition from execution logic:
+This repository is structured as a monorepo, encapsulating the infrastructure definition, authorization logic, mock services, and performance testing tools.
+
+### Lambda Authorizer
+
+The `lambda-authorizer` directory contains a custom AWS Lambda function written in Go that acts as the gatekeeper at the API Gateway level. It intercepts incoming traffic, extracts the `X-Client-Id` header, and queries the internal Rate Limiter service to verify quotas. A critical feature of this function is its fail open mechanism. If the internal rate limiter service times out or returns an error, the Lambda catches the exception, logs it, and explicitly allows the request to proceed. This design guarantees that temporary internal connectivity issues do not block legitimate client traffic.
+
+### CDK
+
+The CDK implementation located in `/infra` is organized to separate infrastructure definition from execution logic:
 
 - **cmd/infra/**: Contains the `main.go` entry point for the CDK application. It handles environment variable ingestion and stack instantiation.
 - **internal/stack/**: Contains the individual CDK stack definitions (Network, Data, RateLimiter, and Api).
-- **internal/logic/**: House shared constants and type definitions used across the infrastructure.
 
-## Requirements
+#### Requirements
 
 The following tools and configurations are required to build and deploy the infrastructure:
 
@@ -34,11 +39,11 @@ The following tools and configurations are required to build and deploy the infr
 - **Docker**: Necessary for CDK bundling processes and for building the Rate Limiter container image.
 - **Make**: Used for automating the build and cleanup processes for the binaries.
 
-## Environment Variables
+#### Environment Variables
 
 The infrastructure supports dynamic configuration via environment variables. To streamline the process, the `cdk.json` is configured to automatically compile the Go source into a standalone binary before synthesis.
 
-### Default Values
+##### Default Values
 
 If a variable is not provided in the terminal, the following default values are applied:
 
@@ -51,7 +56,7 @@ If a variable is not provided in the terminal, the following default values are 
 | `RL_API_KEYS_ENABLED`  | Toggle for API key security           | false          |
 | `RL_IP_WHITELIST`      | List of allowed IP addresses          | (empty)        |
 
-### Deployment
+##### Deployment
 
 The project uses a self-compiling deployment strategy. When you run a CDK command, it triggers the build of the `cmd/infra/main.go` binary.
 
@@ -67,9 +72,9 @@ cdk deploy --all
 RL_CAPACITY=50 RL_REFILL_RATE=5 cdk deploy RateLimiterStack
 ```
 
-## Usage
+#### Usage
 
-### API Access
+##### API Access
 
 Once the `ApiStack` is deployed and the target group is healthy, endpoints can be accessed using `curl`. The `X-Client-Id` header is required:
 
@@ -77,9 +82,9 @@ Once the `ApiStack` is deployed and the target group is healthy, endpoints can b
 curl -i -H "X-Client-Id: dev-user-01" {Your API URL}/receipts
 ```
 
-### Benchmarking
+### Benchmark
 
-To perform a stress test and verify the rate limiting logic, use the provided Go benchmark tool. This tool simulates multiple independent clients to verify that the distributed state is correctly managed:
+To perform a stress test and verify the rate limiting logic, use the provided Go benchmark tool located in the `/benchmark` directory. This tool simulates a realistic environment by utilizing multiple independent clients with distinct user IDs to ensure that the distributed state is correctly managed. You can easily configure the load by adjusting parameters such as the Target Requests Per Second (RPS), the number of concurrent clients, and the duration of the test:
 
 ```bash
 go run main.go \
