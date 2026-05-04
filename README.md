@@ -39,6 +39,12 @@ The following tools and configurations are required to build and deploy the infr
 - **Docker**: Necessary for CDK bundling processes and for building the Rate Limiter container image.
 - **Make**: Used for automating the build and cleanup processes for the binaries.
 
+**Note:** For the cdk to work you must have an existing CDKToolkit. To create one you can run:
+
+```sh
+cdk bootstrap
+```
+
 #### Environment Variables
 
 The infrastructure supports dynamic configuration via environment variables. To streamline the process, the `cdk.json` is configured to automatically compile the Go source into a standalone binary before synthesis.
