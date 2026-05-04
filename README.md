@@ -1,6 +1,6 @@
 # Distributed Rate Limiter on AWS
 
-This project provides a high performance infrastructure for distributed rate limiting on AWS, utilizing the core logic from the `uppnrise/distributed-rate-limiter` repository. It is designed to manage request quotas across multiple clients in a distributed environment, ensuring system stability and resource protection.
+This project provides a high performance infrastructure for distributed rate limiting on AWS, utilizing the core logic from the `uppnrise/distributed-rate-limiter` repository as a foundation. It is designed to manage request quotas across multiple clients in a distributed environment, ensuring system stability and resource protection.
 
 ## Architecture
 
@@ -8,19 +8,27 @@ The system utilizes a multi-layer approach to ensure low latency and high availa
 
 ![Diagram](https://github.com/user-attachments/assets/e49b5c39-d1a8-4b03-be77-1727526971e6)
 
-Requests are intercepted at the API Gateway level by a Lambda Authorizer, which communicates with the Rate Limiter service via a Private VPC Link. This ensures that all traffic remains within the internal AWS network.
+Requests are intercepted at the API Gateway level by a Lambda Authorizer, which communicates with the Rate Limiter service via a Private VPC Link. This ensures that all traffic remains within the internal AWS network. The architecture follows a fail-open strategy: if the rate limiter service is unreachable, the authorizer defaults to allowing the request to prioritize availability.
 
 ## Implementation
 
-The underlying service provides several algorithms to control traffic flow, including Fixed Window and Leaky Bucket implementations. For this specific deployment, the **Token Bucket** algorithm was selected to allow for controlled bursts of traffic while maintaining a strict long term average rate.
+The underlying service provides several algorithms to control traffic flow, including Fixed Window and Leaky Bucket implementations. For this specific deployment, the **Token Bucket** algorithm was selected to allow for controlled bursts of traffic while maintaining a strict long-term average rate.
 
 The Rate Limiter service is built with Spring Boot and integrates with a Valkey based ElastiCache cluster to store token states. This allows multiple ECS tasks to share the same quota information, providing a consistent rate limit across the entire cluster.
+
+## Project Structure
+
+The repository is organized to separate infrastructure definition from execution logic:
+
+- **cmd/infra/**: Contains the `main.go` entry point for the CDK application. It handles environment variable ingestion and stack instantiation.
+- **internal/stack/**: Contains the individual CDK stack definitions (Network, Data, RateLimiter, and Api).
+- **internal/logic/**: House shared constants and type definitions used across the infrastructure.
 
 ## Requirements
 
 The following tools and configurations are required to build and deploy the infrastructure:
 
-- **AWS CLI**: Configured with an identity that possesses permissions for IAM, VPC, ECS, Lambda, and ElastiCache management.
+- **AWS CLI**: Configured with an identity possessing permissions for IAM, VPC, ECS, Lambda, and ElastiCache management.
 - **AWS CDK**: Installed globally to handle the Infrastructure as Code (IaC) deployment.
 - **Golang**: Version 1.26 or higher is required to build the Lambda Authorizer and the CDK infrastructure binary.
 - **Docker**: Necessary for CDK bundling processes and for building the Rate Limiter container image.
@@ -28,7 +36,11 @@ The following tools and configurations are required to build and deploy the infr
 
 ## Environment Variables
 
-The infrastructure supports dynamic configuration via environment variables during the deployment phase. If a variable is not provided in the terminal, the following default values are applied:
+The infrastructure supports dynamic configuration via environment variables. To streamline the process, the `cdk.json` is configured to automatically compile the Go source into a standalone binary before synthesis.
+
+### Default Values
+
+If a variable is not provided in the terminal, the following default values are applied:
 
 | Variable               | Description                           | Default Value  |
 | :--------------------- | :------------------------------------ | :------------- |
@@ -39,14 +51,30 @@ The infrastructure supports dynamic configuration via environment variables duri
 | `RL_API_KEYS_ENABLED`  | Toggle for API key security           | false          |
 | `RL_IP_WHITELIST`      | List of allowed IP addresses          | (empty)        |
 
+### Deployment
+
+The project uses a self-compiling deployment strategy. When you run a CDK command, it triggers the build of the `cmd/infra/main.go` binary.
+
+**Standard Deployment:**
+
+```bash
+cdk deploy --all
+```
+
+**Deployment with Overrides:**
+
+```bash
+RL_CAPACITY=50 RL_REFILL_RATE=5 cdk deploy RateLimiterStack
+```
+
 ## Usage
 
 ### API Access
 
-Once the `ApiStack` is deployed and the api target group is healthy, you can access the protected endpoints using a standard `curl` command. Ensure you include the `X-Client-Id` header to identify the request source:
+Once the `ApiStack` is deployed and the target group is healthy, endpoints can be accessed using `curl`. The `X-Client-Id` header is required:
 
 ```bash
-curl -i -H "X-Client-Id: your-client-id" https://your-api-id.execute-api.us-east-1.amazonaws.com/receipts
+curl -i -H "X-Client-Id: dev-user-01" {Your API URL}/receipts
 ```
 
 ### Benchmarking
@@ -55,7 +83,7 @@ To perform a stress test and verify the rate limiting logic, use the provided Go
 
 ```bash
 go run main.go \
-  -url https://ffzrxupwal.execute-api.us-east-1.amazonaws.com \
+  -url {Your API URL} \
   -clients 5 \
   -rps 50 \
   -duration 60 \
