@@ -26,7 +26,7 @@ type RateLimiterStackProps struct {
 	*RateLimiterContainerEnv
 
 	Vpc                awsec2.IVpc
-	RedisSecurityGroup awsec2.ISecurityGroup
+	RedisSecurityGroup awsec2.SecurityGroup
 }
 
 type RateLimiterStack struct {
@@ -183,6 +183,7 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 		jsii.String("Rate-Limiter-Authorizer"),
 		&awslambda.FunctionProps{
 			Runtime:        awslambda.Runtime_PROVIDED_AL2023(),
+			Architecture:   awslambda.Architecture_ARM_64(),
 			Handler:        jsii.String("bootstrap"),
 			Code:           lambdaCode,
 			SecurityGroups: &[]awsec2.ISecurityGroup{lambdaSG},

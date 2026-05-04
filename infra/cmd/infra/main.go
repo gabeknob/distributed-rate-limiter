@@ -27,10 +27,9 @@ func main() {
 		Vpc:        network.Vpc,
 	})
 	rateLimiter := stack.NewRateLimiterStack(app, "RateLimiterStack", &stack.RateLimiterStackProps{
-		StackProps: *defaultProps,
-		Vpc:        network.Vpc,
-
-		RedisSecurityGroup: data.RedisSecurityGroup,
+		StackProps:         *defaultProps,
+		Vpc:                network.Vpc,
+		RedisSecurityGroup: *data.RedisSecurityGroup,
 
 		RateLimiterContainerEnv: &stack.RateLimiterContainerEnv{
 			RedisHost:              data.RedisEndpointAddress,
