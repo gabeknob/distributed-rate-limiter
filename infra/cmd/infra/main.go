@@ -9,6 +9,14 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
+func getEnv(key, fallback string) *string {
+	value := os.Getenv(key)
+	if value == "" {
+		return jsii.String(fallback)
+	}
+	return jsii.String(value)
+}
+
 func main() {
 	defer jsii.Close()
 
@@ -34,12 +42,12 @@ func main() {
 		RateLimiterContainerEnv: &stack.RateLimiterContainerEnv{
 			RedisHost:              data.RedisEndpointAddress,
 			RedisPort:              data.RedisEndpointPort,
-			LimiterCapacity:        jsii.String("10"),
-			LimiterRefillRate:      jsii.String("1"),
-			IpWhitelist:            jsii.String(""),
-			ExposedEndpoints:       jsii.String("health,metrics"),
-			RateLimiterAlgorithm:   jsii.String("TOKEN_BUCKET"),
-			SecurityApiKeysEnabled: jsii.String("false"),
+			LimiterCapacity:        getEnv("RL_CAPACITY", "10"),
+			LimiterRefillRate:      getEnv("RL_REFILL_RATE", "1"),
+			IpWhitelist:            getEnv("RL_IP_WHITELIST", ""),
+			ExposedEndpoints:       getEnv("RL_EXPOSED_ENDPOINTS", "health,metrics"),
+			RateLimiterAlgorithm:   getEnv("RL_ALGORITHM", "TOKEN_BUCKET"),
+			SecurityApiKeysEnabled: getEnv("RL_API_KEYS_ENABLED", "false"),
 		},
 	})
 	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
