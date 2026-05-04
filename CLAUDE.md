@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Monorepo Structure
 
-```
+```sh
 /
 ├── rate-limiter/      Spring Boot rate limiter service (Java 21, Maven)
 ├── mock-api/          Go HTTP server — fake tax receipt API (EC2 target)
@@ -18,7 +18,9 @@ Each Go component is an independent module. A `go.work` file at the root links t
 ## Component Commands
 
 ### rate-limiter (Java/Maven)
+
 See `rate-limiter/CLAUDE.md` for the full command reference. Quick reference:
+
 ```bash
 cd rate-limiter
 ./mvnw test                          # run all tests (requires Docker)
@@ -27,6 +29,7 @@ cd rate-limiter
 ```
 
 ### mock-api (Go)
+
 ```bash
 cd mock-api
 go run .                   # run locally (default port 8080, override with PORT=9090)
@@ -34,6 +37,7 @@ make build                 # cross-compile for Linux arm64 (EC2 t4g)
 ```
 
 ### lambda-authorizer (Go)
+
 ```bash
 cd lambda-authorizer
 make build                 # compile Linux arm64 binary named 'bootstrap'
@@ -42,6 +46,7 @@ make zip                   # build + zip into function.zip for Lambda upload
 ```
 
 ### benchmark (Go)
+
 ```bash
 cd benchmark
 go run . -url https://<api-gw-url> -clients 20 -rps 100 -duration 30 -client-id test-1
@@ -50,7 +55,7 @@ make build                 # compile native binary
 
 ## Architecture
 
-```
+```sh
 Internet → API Gateway (HTTP API)
                │
                ▼ (Lambda Authorizer on every request, TTL=0)
@@ -65,6 +70,7 @@ Internet → API Gateway (HTTP API)
 ```
 
 **Key design decisions:**
+
 - Lambda Authorizer TTL must be 0 — any cache TTL bypasses rate limiting entirely
 - Rate limit key is the `X-Client-Id` header value — each client gets its own token bucket
 - Fail-open on rate limiter errors (configurable in lambda-authorizer/main.go)
@@ -72,12 +78,12 @@ Internet → API Gateway (HTTP API)
 
 ## Rate Limiter Configuration (ECS env vars)
 
-| Variable | Value |
-|---|---|
-| `RATELIMITER_SECURITY_IP_WHITELIST` | *(empty)* |
-| `RATELIMITER_SECURITY_API_KEYS_ENABLED` | `false` |
-| `RATELIMITER_CAPACITY` | `100` |
-| `RATELIMITER_REFILLRATE` | `10` |
+| Variable                                    | Value            |
+| ------------------------------------------- | ---------------- |
+| `RATELIMITER_SECURITY_IP_WHITELIST`         | _(empty)_        |
+| `RATELIMITER_SECURITY_API_KEYS_ENABLED`     | `false`          |
+| `RATELIMITER_CAPACITY`                      | `100`            |
+| `RATELIMITER_REFILLRATE`                    | `10`             |
 | `MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE` | `health,metrics` |
 
 ## AWS Infrastructure
