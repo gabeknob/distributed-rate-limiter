@@ -1,6 +1,8 @@
 package stack
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigatewayv2authorizers"
@@ -119,16 +121,21 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 		},
 	)
 
-	binaryLocalPath := jsii.String("/usr/local/bin/mock-api")
+	tempZip := "/tmp/mock-api.zip"
+	finalBin := "/usr/local/bin/mock-api"
+
 	ec2.UserData().AddS3DownloadCommand(&awsec2.S3DownloadOptions{
 		Bucket:    apiBinAsset.Bucket(),
 		BucketKey: apiBinAsset.S3ObjectKey(),
-		LocalFile: binaryLocalPath,
+		LocalFile: &tempZip,
 	})
 
-	ec2.UserData().AddCommands(
-		jsii.String("chmod +x "+*binaryLocalPath),
-		jsii.String("printf '[Unit]\nDescription=Mock API\nAfter=network.target\n\n[Service]\nType=simple\nExecStart="+*binaryLocalPath+"\nRestart=always\n\n[Install]\nWantedBy=multi-user.target' > /etc/systemd/system/mock-api.service"),
+	ec2.AddUserData(
+		jsii.String(fmt.Sprintf("unzip %s -d /tmp/extracted", tempZip)),
+		jsii.String(fmt.Sprintf("mv /tmp/extracted/mock-api %s", finalBin)),
+		jsii.String("chmod +x "+finalBin),
+
+		jsii.String("printf '[Unit]\nDescription=Mock API\nAfter=network.target\n\n[Service]\nType=simple\nExecStart="+finalBin+"\nRestart=always\n\n[Install]\nWantedBy=multi-user.target' > /etc/systemd/system/mock-api.service"),
 		jsii.String("systemctl daemon-reload"),
 		jsii.String("systemctl enable mock-api"),
 		jsii.String("systemctl start mock-api"),
@@ -201,6 +208,10 @@ func NewApiStack(scope constructs.Construct, id string, props *ApiStackProps) aw
 			ResponseTypes: &[]awsapigatewayv2authorizers.HttpLambdaResponseType{
 				awsapigatewayv2authorizers.HttpLambdaResponseType_SIMPLE,
 			},
+			IdentitySource: &[]*string{
+				jsii.String("$request.header.X-Client-Id"),
+			},
+			ResultsCacheTtl: awscdk.Duration_Millis(jsii.Number(0)),
 		},
 	)
 
