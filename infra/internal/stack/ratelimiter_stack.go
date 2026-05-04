@@ -25,7 +25,7 @@ type RateLimiterStackProps struct {
 	awscdk.StackProps
 	*RateLimiterContainerEnv
 
-	Vpc                *awsec2.IVpc
+	Vpc                awsec2.IVpc
 	RedisSecurityGroup awsec2.ISecurityGroup
 }
 
@@ -41,7 +41,7 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 		stack,
 		jsii.String("Rate-Limiter-Lambda-Authorizer-SG"),
 		&awsec2.SecurityGroupProps{
-			Vpc:               *props.Vpc,
+			Vpc:               props.Vpc,
 			AllowAllOutbound:  jsii.Bool(false),
 			SecurityGroupName: jsii.String("drl-lambda-authorizer-sg"),
 		},
@@ -51,7 +51,7 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 		stack,
 		jsii.String("Rate-Limiter-ECS-SG"),
 		&awsec2.SecurityGroupProps{
-			Vpc:               *props.Vpc,
+			Vpc:               props.Vpc,
 			AllowAllOutbound:  jsii.Bool(false),
 			SecurityGroupName: jsii.String("drl-ecs-authorizer-sg"),
 		},
@@ -99,7 +99,7 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 		jsii.String("Rate-Limiter-Cluster"),
 		&awsecs.ClusterProps{
 			ClusterName: jsii.String("Rate-Limiter-Cluster"),
-			Vpc:         *props.Vpc,
+			Vpc:         props.Vpc,
 			DefaultCloudMapNamespace: &awsecs.CloudMapNamespaceOptions{
 				Name: jsii.String("local"),
 			},
@@ -111,7 +111,11 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 		jsii.String("Rate-Limiter-Task"),
 		&awsecs.FargateTaskDefinitionProps{
 			Cpu:            jsii.Number(1024),
-			MemoryLimitMiB: jsii.Number(1024),
+			MemoryLimitMiB: jsii.Number(2048),
+			RuntimePlatform: &awsecs.RuntimePlatform{
+				CpuArchitecture:       awsecs.CpuArchitecture_ARM64(),
+				OperatingSystemFamily: awsecs.OperatingSystemFamily_LINUX(),
+			},
 		},
 	)
 
@@ -182,7 +186,7 @@ func NewRateLimiterStack(scope constructs.Construct, id string, props *RateLimit
 			Handler:        jsii.String("bootstrap"),
 			Code:           lambdaCode,
 			SecurityGroups: &[]awsec2.ISecurityGroup{lambdaSG},
-			Vpc:            *props.Vpc,
+			Vpc:            props.Vpc,
 			VpcSubnets: &awsec2.SubnetSelection{
 				SubnetType: awsec2.SubnetType_PRIVATE_WITH_EGRESS,
 			},

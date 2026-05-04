@@ -26,9 +26,9 @@ func main() {
 		StackProps: *defaultProps,
 		Vpc:        network.Vpc,
 	})
-	stack.NewRateLimiterStack(app, "RateLimiterStack", &stack.RateLimiterStackProps{
+	rateLimiter := stack.NewRateLimiterStack(app, "RateLimiterStack", &stack.RateLimiterStackProps{
 		StackProps: *defaultProps,
-		Vpc:        &network.Vpc,
+		Vpc:        network.Vpc,
 
 		RedisSecurityGroup: data.RedisSecurityGroup,
 
@@ -42,6 +42,11 @@ func main() {
 			RateLimiterAlgorithm:   jsii.String("TOKEN_BUCKET"),
 			SecurityApiKeysEnabled: jsii.String("false"),
 		},
+	})
+	stack.NewApiStack(app, "ApiStack", &stack.ApiStackProps{
+		StackProps:       *defaultProps,
+		Vpc:              network.Vpc,
+		LambdaAuthorizer: rateLimiter.AuthorizerLambda,
 	})
 
 	app.Synth(nil)

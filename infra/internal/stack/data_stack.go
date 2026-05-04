@@ -42,22 +42,28 @@ func NewDataStack(scope constructs.Construct, id string, props *DataStackProps) 
 		},
 	)
 
-	cache := awselasticache.NewCfnCacheCluster(
+	cache := awselasticache.NewCfnReplicationGroup(
 		stack,
 		jsii.String("Redis-Cache"),
-		&awselasticache.CfnCacheClusterProps{
-			Engine:               jsii.String("valkey"),
-			CacheNodeType:        jsii.String("cache.t3.micro"),
-			NumCacheNodes:        jsii.Number(1),
-			CacheSubnetGroupName: subnetGroup.Ref(),
-			VpcSecurityGroupIds:  &[]*string{redisSG.SecurityGroupId()},
+		&awselasticache.CfnReplicationGroupProps{
+			Engine:                      jsii.String("valkey"),
+			ReplicationGroupDescription: jsii.String("Rate Limiter token registry"),
+			CacheNodeType:               jsii.String("cache.t4g.small"),
+			CacheSubnetGroupName:        subnetGroup.Ref(),
+
+			NumCacheClusters:         jsii.Number(1),
+			MultiAzEnabled:           jsii.Bool(false),
+			AutomaticFailoverEnabled: jsii.Bool(false),
+
+			TransitEncryptionEnabled: jsii.Bool(false),
+			SecurityGroupIds:         &[]*string{redisSG.SecurityGroupId()},
 		},
 	)
 
 	return &DataStack{
 		Stack:                stack,
-		RedisEndpointAddress: cache.AttrRedisEndpointAddress(),
-		RedisEndpointPort:    cache.AttrRedisEndpointPort(),
+		RedisEndpointAddress: cache.AttrPrimaryEndPointAddress(),
+		RedisEndpointPort:    cache.AttrPrimaryEndPointPort(),
 		RedisSecurityGroup:   redisSG,
 	}
 }
